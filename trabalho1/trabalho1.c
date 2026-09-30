@@ -10,8 +10,8 @@
 //  O aluno deve preencher seus dados abaixo, e implementar as questões do trabalho
 
 //  ----- Dados do Aluno -----
-//  Nome:
-//  email:
+//  Nome: KAUAN LISBOA DO VALE  
+//  email: 
 //  Matrícula:
 //  Semestre:
 
@@ -91,20 +91,43 @@ int teste(int a)
  */
 int q1(char data[])
 {
-  int datavalida = 1;
+  int i, barras = 0, digitos = 0;
 
-  //quebrar a string data em strings sDia, sMes, sAno
-
-
-  //printf("%s\n", data);
-
-  if (datavalida)
-      return 1;
-  else
+  // pré-validação: só dígitos e duas barras, com 1-2 dígitos em dia/mês e 2 ou 4 no ano
+  for (i = 0; data[i] != '\0'; i++)
+  {
+    if (data[i] == '/')
+    {
+      if (digitos < 1 || digitos > 2) return 0;
+      barras++;
+      digitos = 0;
+    }
+    else if (data[i] >= '0' && data[i] <= '9')
+    {
+      digitos++;
+      if (digitos > 4) return 0;
+    }
+    else
       return 0;
+  }
+  if (barras != 2 || (digitos != 2 && digitos != 4)) return 0;
+
+  DataQuebrada dq = quebraData(data);
+  if (!dq.valido) return 0;
+
+  int dia = dq.iDia, mes = dq.iMes, ano = dq.iAno;
+  if (ano < 100) ano += 2000; // ano com 2 dígitos: assume 20xx
+
+  if (ano < 1 || mes < 1 || mes > 12 || dia < 1) return 0;
+
+  int diasNoMes[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  int bissexto = (ano % 4 == 0 && ano % 100 != 0) || (ano % 400 == 0);
+
+  int maxDia = diasNoMes[mes - 1];
+  if (mes == 2 && bissexto) maxDia = 29;
+
+  return dia <= maxDia;
 }
-
-
 
 /*
  Q2 = diferença entre duas datas
