@@ -6,6 +6,11 @@
 //  Compilar: gcc q8.c -o q8
 //  Executar: ./q8
 // #################################################
+//  ----- Dados do Aluno -----
+//  Nome: KAUAN LISBOA DO VALE
+//  email: 20252160001@ifba.edu.br
+//  Matrícula: 20252160001
+//  Semestre: terceiro semestre
 
 #include <stdio.h>
 #include <stdlib.h>

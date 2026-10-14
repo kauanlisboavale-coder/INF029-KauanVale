@@ -13,6 +13,11 @@
 //     os demais (NUM_NAVIOS - 5) obrigatoriamente de tamanho 2. Mínimo: 5 navios.
 //   - Mapa: ' ' mar sem nada | 'N' navio | '0' navio abatido | 'X' tiro na água
 // #################################################
+//  ----- Dados do Aluno -----
+//  Nome: KAUAN LISBOA DO VALE
+//  email: 20252160001@ifba.edu.br
+//  Matrícula: 20252160001
+//  Semestre: terceiro semestre
 
 #include <stdio.h>
 #include <stdlib.h>
