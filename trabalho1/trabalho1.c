@@ -10,8 +10,8 @@
 //  O aluno deve preencher seus dados abaixo, e implementar as questões do trabalho
 
 //  ----- Dados do Aluno -----
-//  Nome: KAUAN LISBOA DO VALE  
-//  email: 
+//  Nome:
+//  email:
 //  Matrícula:
 //  Semestre:
 
@@ -76,6 +76,20 @@ int teste(int a)
     return val;
 }
 
+/* ---------- funções auxiliares de data (usadas na q1 e na q2) ---------- */
+
+static int ehBissexto(int ano)
+{
+  return (ano % 4 == 0 && ano % 100 != 0) || (ano % 400 == 0);
+}
+
+static int diasNoMes(int mes, int ano)
+{
+  int dias[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  if (mes == 2 && ehBissexto(ano)) return 29;
+  return dias[mes - 1];
+}
+
 /*
  Q1 = validar data
 @objetivo
@@ -120,14 +134,12 @@ int q1(char data[])
 
   if (ano < 1 || mes < 1 || mes > 12 || dia < 1) return 0;
 
-  int diasNoMes[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-  int bissexto = (ano % 4 == 0 && ano % 100 != 0) || (ano % 400 == 0);
-
-  int maxDia = diasNoMes[mes - 1];
-  if (mes == 2 && bissexto) maxDia = 29;
+  int maxDia = diasNoMes(mes, ano);
 
   return dia <= maxDia;
 }
+
+
 
 /*
  Q2 = diferença entre duas datas
@@ -145,8 +157,6 @@ int q1(char data[])
  */
 DiasMesesAnos q2(char datainicial[], char datafinal[])
 {
-
-    //calcule os dados e armazene nas três variáveis a seguir
     DiasMesesAnos dma;
 
     if (q1(datainicial) == 0){
@@ -156,17 +166,80 @@ DiasMesesAnos q2(char datainicial[], char datafinal[])
       dma.retorno = 3;
       return dma;
     }else{
-      //verifique se a data final não é menor que a data inicial
-      
-      //calcule a distancia entre as datas
+      DataQuebrada ini = quebraData(datainicial);
+      DataQuebrada fim = quebraData(datafinal);
 
+      // ano com 2 dígitos: mesma regra da q1 (20xx)
+      if (ini.iAno < 100) ini.iAno += 2000;
+      if (fim.iAno < 100) fim.iAno += 2000;
 
-      //se tudo der certo
+      // verifica se a data final não é menor que a inicial
+      if (fim.iAno < ini.iAno ||
+         (fim.iAno == ini.iAno && fim.iMes < ini.iMes) ||
+         (fim.iAno == ini.iAno && fim.iMes == ini.iMes && fim.iDia < ini.iDia)){
+        dma.retorno = 4;
+        return dma;
+      }
+
+      // 29/02 em ano final não bissexto: o "aniversário" cai em 28/02
+      if (ini.iDia == 29 && ini.iMes == 2 && !ehBissexto(fim.iAno))
+        ini.iDia = 28;
+
+      int dias = fim.iDia - ini.iDia;
+      int meses = fim.iMes - ini.iMes;
+      int anos = fim.iAno - ini.iAno;
+
+      if (dias < 0){
+        // empresta os dias do mês anterior ao da data final
+        int mesAnterior = fim.iMes - 1;
+        int anoMesAnterior = fim.iAno;
+        if (mesAnterior == 0){
+          mesAnterior = 12;
+          anoMesAnterior--;
+        }
+        dias += diasNoMes(mesAnterior, anoMesAnterior);
+        meses--;
+      }
+      if (meses < 0){
+        meses += 12;
+        anos--;
+      }
+
+      dma.qtdDias = dias;
+      dma.qtdMeses = meses;
+      dma.qtdAnos = anos;
       dma.retorno = 1;
       return dma;
-      
     }
-    
+}
+
+/* Devolve a letra "base" de uma vogal acentuada em UTF-8 (á -> a, É -> E ...).
+   Para qualquer outro caractere devolve o próprio caractere.
+   *tam recebe quantos bytes foram consumidos (1 ou 2). */
+static char caractereBase(const char *p, int *tam)
+{
+  unsigned char a = (unsigned char)p[0];
+  unsigned char b;
+  char base = 0;
+
+  *tam = 1;
+  if (a != 0xC3 || p[1] == '\0') return p[0];
+
+  b = (unsigned char)p[1];
+  if (b >= 0x80 && b <= 0x84) base = 'A';        // À Á Â Ã Ä
+  else if (b >= 0x88 && b <= 0x8B) base = 'E';   // È É Ê Ë
+  else if (b >= 0x8C && b <= 0x8F) base = 'I';   // Ì Í Î Ï
+  else if (b >= 0x92 && b <= 0x96) base = 'O';   // Ò Ó Ô Õ Ö
+  else if (b >= 0x99 && b <= 0x9C) base = 'U';   // Ù Ú Û Ü
+  else if (b >= 0xA0 && b <= 0xA4) base = 'a';   // à á â ã ä
+  else if (b >= 0xA8 && b <= 0xAB) base = 'e';   // è é ê ë
+  else if (b >= 0xAC && b <= 0xAF) base = 'i';   // ì í î ï
+  else if (b >= 0xB2 && b <= 0xB6) base = 'o';   // ò ó ô õ ö
+  else if (b >= 0xB9 && b <= 0xBC) base = 'u';   // ù ú û ü
+
+  if (base == 0) return p[0];
+  *tam = 2;
+  return base;
 }
 
 /*
@@ -181,7 +254,21 @@ DiasMesesAnos q2(char datainicial[], char datafinal[])
  */
 int q3(char *texto, char c, int isCaseSensitive)
 {
-    int qtdOcorrencias = -1;
+    int qtdOcorrencias = 0, i = 0, tam;
+    char alvo = c, atual;
+
+    if (isCaseSensitive != 1 && alvo >= 'A' && alvo <= 'Z')
+        alvo = alvo + ('a' - 'A');
+
+    while (texto[i] != '\0')
+    {
+        atual = caractereBase(&texto[i], &tam); // acentos nas vogais são ignorados
+        if (isCaseSensitive != 1 && atual >= 'A' && atual <= 'Z')
+            atual = atual + ('a' - 'A');
+        if (atual == alvo)
+            qtdOcorrencias++;
+        i += tam;
+    }
 
     return qtdOcorrencias;
 }
@@ -203,7 +290,50 @@ int q3(char *texto, char c, int isCaseSensitive)
  */
 int q4(char *strTexto, char *strBusca, int posicoes[30])
 {
-    int qtdOcorrencias = -1;
+    int qtdOcorrencias = 0;
+    int i = 0, j;
+    int pos = 0;           // posição em CARACTERES (um 'á' em UTF-8 tem 2 bytes, mas conta 1)
+    int tamBusca = 0;      // tamanho da palavra em bytes
+    int charsBusca = 0;    // tamanho da palavra em caracteres
+
+    while (strBusca[tamBusca] != '\0')
+    {
+        if (((unsigned char)strBusca[tamBusca] & 0xC0) != 0x80)
+            charsBusca++;
+        tamBusca++;
+    }
+    if (tamBusca == 0)
+        return 0;
+
+    while (strTexto[i] != '\0')
+    {
+        // byte de continuação de um caractere UTF-8: não é um novo caractere
+        if (((unsigned char)strTexto[i] & 0xC0) == 0x80)
+        {
+            i++;
+            continue;
+        }
+        pos++;
+
+        j = 0;
+        while (j < tamBusca && strTexto[i + j] != '\0' && strTexto[i + j] == strBusca[j])
+            j++;
+
+        if (j == tamBusca)
+        {
+            if (qtdOcorrencias * 2 + 1 < 30) // o vetor tem 30 posições
+            {
+                posicoes[qtdOcorrencias * 2] = pos;
+                posicoes[qtdOcorrencias * 2 + 1] = pos + charsBusca - 1;
+            }
+            qtdOcorrencias++;
+            // pula a ocorrência inteira (ocorrências não se sobrepõem)
+            i += tamBusca;
+            pos += charsBusca - 1;
+            continue;
+        }
+        i++;
+    }
 
     return qtdOcorrencias;
 }
@@ -220,8 +350,21 @@ int q4(char *strTexto, char *strBusca, int posicoes[30])
 
 int q5(int num)
 {
+    int negativo = 0, invertido = 0;
 
-    return num;
+    if (num < 0)
+    {
+        negativo = 1;
+        num = -num;
+    }
+
+    while (num > 0)
+    {
+        invertido = invertido * 10 + num % 10;
+        num = num / 10;
+    }
+
+    return negativo ? -invertido : invertido;
 }
 
 /*
@@ -236,7 +379,35 @@ int q5(int num)
 
 int q6(int numerobase, int numerobusca)
 {
-    int qtdOcorrencias;
+    int qtdOcorrencias = 0;
+    long long base = numerobase, busca = numerobusca, p = 10, t;
+
+    if (base < 0) base = -base;
+    if (busca < 0) busca = -busca;
+
+    // p = 10^(quantidade de dígitos de busca)
+    t = busca;
+    while (t >= 10)
+    {
+        p *= 10;
+        t /= 10;
+    }
+
+    if (base == 0)
+        return busca == 0 ? 1 : 0;
+
+    // olha os últimos dígitos de base; se casar, "consome" a ocorrência (sem sobreposição)
+    while (base > 0)
+    {
+        if (base % p == busca)
+        {
+            qtdOcorrencias++;
+            base /= p;
+        }
+        else
+            base /= 10;
+    }
+
     return qtdOcorrencias;
 }
 
@@ -252,8 +423,35 @@ int q6(int numerobase, int numerobusca)
 
  int q7(char matriz[8][10], char palavra[5])
  {
-     int achou;
-     return achou;
+     // 8 direções: direita, esquerda, baixo, cima e as 4 diagonais
+     int dl[8] = {0, 0, 1, -1, 1, 1, -1, -1};
+     int dc[8] = {1, -1, 0, 0, 1, -1, 1, -1};
+     int tam = 0, l, c, d, k, nl, nc;
+
+     while (tam < 5 && palavra[tam] != '\0')
+         tam++;
+     if (tam == 0)
+         return 0;
+
+     for (l = 0; l < 8; l++)
+     {
+         for (c = 0; c < 10; c++)
+         {
+             for (d = 0; d < 8; d++)
+             {
+                 for (k = 0; k < tam; k++)
+                 {
+                     nl = l + dl[d] * k;
+                     nc = c + dc[d] * k;
+                     if (nl < 0 || nl >= 8 || nc < 0 || nc >= 10 || matriz[nl][nc] != palavra[k])
+                         break;
+                 }
+                 if (k == tam)
+                     return 1;
+             }
+         }
+     }
+     return 0;
  }
 
 
